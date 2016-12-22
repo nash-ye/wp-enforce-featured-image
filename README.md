@@ -2,7 +2,7 @@
 Enforce certain post types to be published with a featured image with certain dimensions if specified.
 
 ## Requirements
-WordPress +4.4
+WordPress 4.4+
 
 ## Credits
 This plugin is based on [Force Featured Image](https://wordpress.org/plugins/force-featured-image/) plugin by X-Team.
