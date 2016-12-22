@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Enforce Featured Image
  * Plugin URI: https://github.com/nash-ye/wp-enforce-featured-image
- * Description: Enforce certain post types to be published with a featured image and a certain dimension if specified.
- * Version: 0.1
+ * Description: Enforce certain post types to be published with a featured image and a certain dimensions if specified.
+ * Version: 0.1.1
  * Author: Nashwan Doaqan
  * Author URI: http://nashwan-d.com
  * Text Domain: enforce-featured-image
@@ -70,11 +70,17 @@ class Enforce_Featured_Image {
 		switch ( $msg_code ) {
 			case 'wrong-size':
 				$enforce_args = static::get_post_type_enforce_args( $post->post_type );
-				$dimensions = sprintf( '<strong>%spx &times; %spx</strong>', $enforce_args['min_width'], $enforce_args['min_height'] );
-				$msg = sprintf( __( "This post <strong>featured image doesn't respect the required image dimensions</strong>. Please add an image with the following dimensions: %s", 'enforce-featured-image' ), $dimensions );
+				if ( $enforce_args['min_width'] && $enforce_args['min_height'] ) {
+					$dimensions = sprintf( '<strong>%spx &times; %spx</strong>', $enforce_args['min_width'], $enforce_args['min_height'] );
+					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with the following dimensions: %s.", 'enforce-featured-image' ), $dimensions );
+				} elseif ( $enforce_args['min_width'] ) {
+					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with width of %s at least.", 'enforce-featured-image' ), sprintf( '<strong>%spx</strong>', $enforce_args['min_width'] ) );
+				} elseif ( $enforce_args['min_height'] ) {
+					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with height of %s at least.", 'enforce-featured-image' ), sprintf( '<strong>%spx</strong>', $enforce_args['min_height'] ) );
+				}
 				break;
 			case 'no-image':
-				$msg = __( "This post <strong>doesn't have a featured image</strong>. Please add an image before publishing.", 'enforce-featured-image' );
+				$msg = __( "This post doesn't have a featured image. Please add an image before publishing.", 'enforce-featured-image' );
 				break;
 			default:
 				return;
@@ -188,13 +194,9 @@ class Enforce_Featured_Image {
 			if ( $image_meta && is_array( $image_meta ) ) {
 				$enforce_args = static::get_post_type_enforce_args( $post_type );
 
-				// Check if width is set or if height is set and larger than the size in the option (so WordPress can crop)
-				$validate_width  = filter_var( $image_meta['width'], FILTER_VALIDATE_INT, array(
-					'options' => array( 'min_range' => (int) $enforce_args['min_width'] ),
-				) );
-				$validate_height = filter_var( $image_meta['height'], FILTER_VALIDATE_INT, array(
-					'options' => array( 'min_range' => (int) $enforce_args['min_height'] ),
-				) );
+				// Check if width is set or if height is set and larger than the size in the option (so WordPress can crop).
+				$validate_width = ( ! $enforce_args['min_width'] ) || (int) $image_meta['width'] >= (int) $enforce_args['min_width'];
+				$validate_height = ( ! $enforce_args['min_height'] ) || (int) $image_meta['height'] >= (int) $enforce_args['min_height'];
 
 				if ( $validate_width && $validate_height ) {
 					return true;
