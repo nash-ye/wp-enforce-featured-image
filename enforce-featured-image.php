@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Enforce Featured Image
  * Plugin URI: https://github.com/nash-ye/wp-enforce-featured-image
- * Description: Enforce certain post types to be published with a featured image and a certain dimensions if specified.
- * Version: 0.1.2
+ * Description: Enforce certain post types to be published with a featured image with certain dimensions if specified.
+ * Version: 0.1.3
  * Author: Nashwan Doaqan
  * Author URI: http://nashwan-d.com
  * Text Domain: enforce-featured-image
@@ -60,7 +60,7 @@ class Enforce_Featured_Image {
 		$msg_code = filter_input( INPUT_GET, 'enforce-featured-image', FILTER_SANITIZE_STRING );
 
 		if ( empty( $msg_code ) && ! is_null( $post ) && 'post' === $current_screen->base ) {
-			$msg_code = $this->check_featured_image_invalidity( $post );
+			$msg_code = $this->check_post_featured_image_condition( $post );
 		}
 
 		if ( empty( $msg_code ) ) {
@@ -118,7 +118,7 @@ class Enforce_Featured_Image {
 	}
 
 	/**
-	 * Add query var so we can display a custom message if the user hasn't set any featured image
+	 * Add "enforce-featured-image" query argument so we can display a custom message if the user hasn't set any featured image.
 	 *
 	 * @param $location
 	 * @param $post_id
@@ -126,7 +126,7 @@ class Enforce_Featured_Image {
 	 * @since 0.1
 	 */
 	public function filter_redirect_post_location( $location, $post_id ) {
-		$invalidity = $this->check_featured_image_invalidity( $post_id );
+		$invalidity = $this->check_post_featured_image_condition( $post_id );
 
 		if ( ! empty( $invalidity ) ) {
 			$url_query_args = array(
@@ -148,14 +148,20 @@ class Enforce_Featured_Image {
 	 *
 	 * @param WP_Post|int $post
 	 * @return string
-	 * @since 0.1
+	 * @since 0.1.3
 	 */
-	private function check_featured_image_invalidity( $post ) {
-		$invalidity = '';
+	private function check_post_featured_image_condition( $post ) {
+		$condition = '';
+		$post = get_post( $post );
+
+		if ( empty( $post ) ) {
+			return $condition;
+		}
+
 		$post_type = get_post_type( $post );
 
 		if ( ! static::is_enforced_on_post_type( $post_type ) ) {
-			return $invalidity;
+			return $condition;
 		}
 
 		// Get the featured image associated with this post
@@ -163,16 +169,16 @@ class Enforce_Featured_Image {
 
 		// Check if featured image is present
 		if ( empty( $featured_image_id ) ) {
-			$invalidity = 'no-image';
+			$condition = 'no-image';
 		} elseif ( ! $this->is_image_respect_size( $featured_image_id, $post_type ) ) {
-			$invalidity = 'wrong-size';
+			$condition = 'wrong-size';
 		}
 
-		return $invalidity;
+		return $condition;
 	}
 
 	/**
-	 * Check if the an image match the enforce options.
+	 * Check if the an image match the enforcement options.
 	 *
 	 * @param $image_id
 	 * @param $post_type
@@ -188,27 +194,31 @@ class Enforce_Featured_Image {
 			return false;
 		}
 
-		if ( static::is_enforced_on_post_type( $post_type ) ) {
-			$image_meta = wp_get_attachment_metadata( $image_id );
+		if ( ! static::is_enforced_on_post_type( $post_type ) ) {
+			return false;
+		}
 
-			if ( $image_meta && is_array( $image_meta ) ) {
-				$enforce_args = static::get_post_type_enforce_args( $post_type );
+		$image_meta = wp_get_attachment_metadata( $image_id );
 
-				// Check if width is set or if height is set and larger than the size in the option (so WordPress can crop).
-				$validate_width = ( ! $enforce_args['min_width'] ) || (int) $image_meta['width'] >= (int) $enforce_args['min_width'];
-				$validate_height = ( ! $enforce_args['min_height'] ) || (int) $image_meta['height'] >= (int) $enforce_args['min_height'];
+		if ( ! $image_meta || ! is_array( $image_meta ) ) {
+			return false;
+		}
 
-				if ( $validate_width && $validate_height ) {
-					return true;
-				}
-			}
+		$enforce_args = static::get_post_type_enforce_args( $post_type );
+
+		// Check if width is set or if height is set and larger than or equal the size in the enforcement options.
+		$valid_width = ( ! $enforce_args['min_width'] ) || (int) $image_meta['width'] >= (int) $enforce_args['min_width'];
+		$valid_height = ( ! $enforce_args['min_height'] ) || (int) $image_meta['height'] >= (int) $enforce_args['min_height'];
+
+		if ( $valid_width && $valid_height ) {
+			return true;
 		}
 
 		return false;
 	}
 
 	/**
-	 * Check if post type is forced to have a featured image.
+	 * Check if a post-type is forced to have a featured image.
 	 *
 	 * @param string $post_type
 	 * @return bool
@@ -220,7 +230,9 @@ class Enforce_Featured_Image {
 	}
 
 	/**
-	 * @return array
+	 * Get post-type enforcement arguments.
+	 *
+	 * @return array|bool
 	 * @since 0.1
 	 * @static
 	 */
@@ -233,11 +245,13 @@ class Enforce_Featured_Image {
 	}
 
 	/**
+	 * Enforce a featured image on a post-type.
+	 *
 	 * @return bool
 	 * @since 0.1
 	 * @static
 	 */
-	public static function enforce_on_post_type( $post_type, array $args ) {
+	public static function enforce_on_post_type( $post_type, array $args = array() ) {
 		$post_type = (string) $post_type;
 
 		if ( empty( $post_type ) ) {
