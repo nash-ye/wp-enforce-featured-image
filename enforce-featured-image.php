@@ -3,7 +3,7 @@
  * Plugin Name: Enforce Featured Image
  * Plugin URI: https://github.com/nash-ye/wp-enforce-featured-image
  * Description: Enforce certain post types to be published with a featured image and a certain dimensions if specified.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author: Nashwan Doaqan
  * Author URI: http://nashwan-d.com
  * Text Domain: enforce-featured-image
@@ -60,7 +60,7 @@ class Enforce_Featured_Image {
 		$msg_code = filter_input( INPUT_GET, 'enforce-featured-image', FILTER_SANITIZE_STRING );
 
 		if ( empty( $msg_code ) && ! is_null( $post ) && 'post' === $current_screen->base ) {
-			$msg_code = $this->check_featured_image_invalidity( $post->ID, $post->post_type );
+			$msg_code = $this->check_featured_image_invalidity( $post );
 		}
 
 		if ( empty( $msg_code ) ) {
@@ -72,7 +72,7 @@ class Enforce_Featured_Image {
 				$enforce_args = static::get_post_type_enforce_args( $post->post_type );
 				if ( $enforce_args['min_width'] && $enforce_args['min_height'] ) {
 					$dimensions = sprintf( '<strong>%spx &times; %spx</strong>', $enforce_args['min_width'], $enforce_args['min_height'] );
-					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with the following dimensions: %s.", 'enforce-featured-image' ), $dimensions );
+					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with dimensions %s at least.", 'enforce-featured-image' ), $dimensions );
 				} elseif ( $enforce_args['min_width'] ) {
 					$msg = sprintf( __( "This post featured image doesn't respect the required image dimensions. Please add an image with width of %s at least.", 'enforce-featured-image' ), sprintf( '<strong>%spx</strong>', $enforce_args['min_width'] ) );
 				} elseif ( $enforce_args['min_height'] ) {
@@ -144,22 +144,22 @@ class Enforce_Featured_Image {
 	}
 
 	/**
-	 * Check image condition and put an admin message accordingly
+	 * Check post featured image condition.
 	 *
-	 * @param int $post_id
+	 * @param WP_Post|int $post
 	 * @return string
 	 * @since 0.1
 	 */
-	private function check_featured_image_invalidity( $post_id ) {
+	private function check_featured_image_invalidity( $post ) {
 		$invalidity = '';
-		$post_type = get_post_type( $post_id );
+		$post_type = get_post_type( $post );
 
 		if ( ! static::is_enforced_on_post_type( $post_type ) ) {
 			return $invalidity;
 		}
 
 		// Get the featured image associated with this post
-		$featured_image_id = get_post_thumbnail_id( $post_id );
+		$featured_image_id = get_post_thumbnail_id( $post );
 
 		// Check if featured image is present
 		if ( empty( $featured_image_id ) ) {
