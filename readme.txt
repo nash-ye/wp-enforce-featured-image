@@ -29,7 +29,7 @@ if ( class_exists( 'Enforce_Featured_Image' ) ) {
 Note: You can use [Code Snippets](https://wordpress.org/plugins/code-snippets) plugin to add the code snippets to your site.
 
 = Credits
-This plugin is based on [Force Featured Image](https://wordpress.org/plugins/force-featured-image/) plugin by X-Team.
+This plugin is based on [Force Featured Image](https://wordpress.org/plugins/force-featured-image/) plugin by XWP.
 
 = Contributing =
 Developers can contribute to the source code on the [Github Repository](https://github.com/nash-ye/wp-enforce-featured-image).

@@ -9,7 +9,7 @@
  * Text Domain: enforce-featured-image
  * Domain Path: /locales
  *
- * This plugin is based on "Force Featured Image" WP plugin by X-Team.
+ * This plugin is based on "Force Featured Image" WP plugin by XWP.
  */
 
 /**

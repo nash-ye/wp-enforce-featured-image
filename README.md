@@ -5,7 +5,7 @@ Enforce certain post types to be published with a featured image with certain di
 WordPress 4.4+
 
 ## Credits
-This plugin is based on [Force Featured Image](https://wordpress.org/plugins/force-featured-image/) plugin by X-Team.
+This plugin is based on [Force Featured Image](https://wordpress.org/plugins/force-featured-image/) plugin by XWP.
 
 ## Usage
 Write an another plugin file, or paste the example below in your theme `functions.php` file:
